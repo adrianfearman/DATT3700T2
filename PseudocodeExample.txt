@@ -1,0 +1,61 @@
+DATT 3700 - Pseudocode Idea
+
+// 4 Parts to the code, Pre-game, Game Sequence, Sequence Check and Post-Game
+// for this pseudocode example, game is set to 3 Sounds
+
+
+
+// PRE GAME - Processing
+function random(){
+	int Value1 = random number between 1 and 3
+	int Value2 = random number between 1 and 3
+	int Value3 = random number between 1 and 3
+
+
+	Save sequence
+	Send to MAX8 through SHIFTR
+}
+
+
+
+// GAME SEQUENCE - MAX8 
+Receive sequence
+Plays audio and visuals to a jit.window in order received (Value1, Value2 Value3)
+
+game waits for player input
+
+Players then sends input to Game via Arduino Input
+Plays the visuals as they are pressed
+
+Sends the player order to Processing through Shiftr
+
+
+
+// SEQUENCE CHECK - PROCESSING
+Receives order of input values from max8
+checks order
+
+if (order matches){
+	send MAX8 a match CORRECT confirmation
+	create new random values sequence (for the next round)
+} else {
+	send MAX8 a INCORRECT match signal
+	resend old random sequence back to GAME SEQUENCE PART
+}
+
+
+
+// POST GAME - MAX8
+receives input from SEQUENCE CHECK stage
+
+if (received order correct) {
+	play/display confirmation visuals
+	update score ++
+} else {
+	replay old sound sequence
+}
+
+
+
+
+
