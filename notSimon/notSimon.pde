@@ -7,7 +7,8 @@ int random;
 int receivedVal;
 int currRound=3;
 int life = 3;
-int score;
+final int ROUNDSCORE = 100;
+int score = 0;
 String genInput = "";
 int plyrInput;
 
@@ -73,25 +74,31 @@ void gameRound() {
       genPattern.add(random);
       genInput = genInput + " " + str(random);
     }
-    println(genInput);
     client.publish("/Team2/genInput", genInput);
     println(genPattern);
-    
 }
 
 void outcomeCheck() {
-  score = currRound-2;
   if (plyrPattern.equals(genPattern)){     //checks if player is correct
+    score += ROUNDSCORE;
     println("YOU WIN THE ROUND, CURRENT SCORE:" + score);
     println("YOU HAVE: " + life + " heart(s) left");
     currRound++; 
     gameRound();
   } else {
-    println("YOU LOSE THE ROUND, CURRENT SCORE:" + score);
-    println("YOU HAVE: " + life + " heart(s) left");
-    life--;
-    gameRound();
-  }
+      for (int i=0;i<=currRound;i++){
+        if(genPattern.get(i) != plyrPattern.get(i)){
+          if (life > 0) {life--;}
+        }
+      }
+      println("YOU LOSE THE ROUND, CURRENT SCORE:" + score);
+      println("YOU HAVE: " + life + " heart(s) left");
+      if (life > 0){
+        gameRound();
+      } else {
+      println("YOU HAVE LOST THE GAME. FINAL SCORE: " + score);
+      }
+   }
 }
 
 
