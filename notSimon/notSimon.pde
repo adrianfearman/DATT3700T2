@@ -6,9 +6,10 @@ MQTTClient client;
 int random;
 int receivedVal;
 int currRound=3;
+int life = 3;
 int score;
-String test = "";
-String testStr="";
+String genInput = "";
+int plyrInput;
 
 ArrayList<Integer> genPattern =  new ArrayList<>();
 ArrayList<Integer> plyrPattern = new ArrayList<>();
@@ -18,7 +19,7 @@ void setup() {
   
   client = new MQTTClient(this);
   client.connect("mqtt://datt3700:datt3700experiments@datt3700.cloud.shiftr.io", 
-                  "alice");
+                  "player");
                   
   //generates a string of 4 random numbers from 1-9
   //for(int i=0;i<4;i++){
@@ -43,9 +44,11 @@ void setup() {
 void keyReleased(){
   if (plyrPattern.size() < genPattern.size()){
     if (Character.getNumericValue(key) >= 0 && Character.getNumericValue(key) <= 9){
-      plyrPattern.add(Character.getNumericValue(key));
+      plyrInput = Character.getNumericValue(key);
+      plyrPattern.add(plyrInput);
       println(plyrPattern);
       println(genPattern);
+      client.publish("/Team2/plyrInput", str(plyrInput));
     }
   }
 }
@@ -64,21 +67,30 @@ void keyPressed() {
 void gameRound() {
     genPattern.clear();
     plyrPattern.clear();
+    genInput = "";
     for(int i=0;i<=currRound;i++){
       random = int(random(1,10));
       genPattern.add(random);
+      genInput = genInput + " " + str(random);
     }
+    println(genInput);
+    client.publish("/Team2/genInput", genInput);
     println(genPattern);
+    
 }
 
 void outcomeCheck() {
   score = currRound-2;
   if (plyrPattern.equals(genPattern)){     //checks if player is correct
     println("YOU WIN THE ROUND, CURRENT SCORE:" + score);
+    println("YOU HAVE: " + life + " heart(s) left");
     currRound++; 
     gameRound();
   } else {
-    println("YOU LOSE THE ROUND, FINAL SCORE:" + score);
+    println("YOU LOSE THE ROUND, CURRENT SCORE:" + score);
+    println("YOU HAVE: " + life + " heart(s) left");
+    life--;
+    gameRound();
   }
 }
 
@@ -87,7 +99,7 @@ void outcomeCheck() {
 void draw() {
   //displays reading on screen
   background(0);
-  text("test value:" + test, 20, height/2);
+  //text("test value:" + test, 20, height/2);
   
 }
 
