@@ -1,20 +1,22 @@
 import mqtt.*;
 import processing.serial.*;
 import processing.sound.*;
+import cc.arduino.*;
 
+Arduino arduino;
 MQTTClient client;
-
-//Team2/life - how many lives the player has left
-//Team2/score - total score 
-//Team2/genInput - the computer generated pattern
-//Team2/plyrInput - the button the player is currently pushing
-//Team2/continueGame - does the player want to move on to the next round?
 
 int random, receivedVal, plyrInput;
 int currRound=3;
 int life=3;
 int score=0;
+
 final int ROUNDSCORE=100;
+final int PRESSED = 1;
+final int NOTPRESSED = 0;
+final int STARTPIN = 2; //change to first pin used on the arduino
+final int CONVERT = STARTPIN-1; //used to convert to arrays based on which arduino pin is used
+final int PINS = 8;
 
 boolean pressable = false;
 boolean intro = true;
@@ -24,11 +26,22 @@ String anonPattern = "";
 
 ArrayList<Integer> genPattern =  new ArrayList();
 ArrayList<Integer> plyrPattern = new ArrayList();
+ArrayList<Integer> stateCheck = new ArrayList();
 ArrayList<SoundFile> soundList = new ArrayList();
 ArrayList<SoundFile> alarmList = new ArrayList();
 ArrayList<Timer> ts = new ArrayList();
 
 void setup() {
+  
+  arduino = new Arduino(this, Arduino.list()[2], 57600);
+  
+  for (int i=0; i<=13; i++) {
+    arduino.pinMode(i, Arduino.INPUT);
+  }
+  
+  for (int j=0; j<=PINS; j++){
+    stateCheck.add(NOTPRESSED);
+  }
   
   soundList.add(new SoundFile(this, "BARK.mp3"));
   soundList.add(new SoundFile(this, "BONK.mp3"));
@@ -43,6 +56,8 @@ void setup() {
   alarmList.add(new SoundFile(this, "WRONG.mp3"));
   alarmList.add(new SoundFile(this, "PRICE_IS_WRONG.mp3"));
   alarmList.add(new SoundFile(this, "didi.mp3"));
+  
+  
   
   size(200,200);
   
@@ -73,24 +88,20 @@ class Timer {
   }
 }
 
-void keyReleased(){
+void buttonPress(int button){
   if (intro == true){
-    if (Character.getNumericValue(key) > 0 && Character.getNumericValue(key) <= 9){
-      plyrInput = Character.getNumericValue(key);
-      soundList.get(plyrInput-1).play();
-    }
+      plyrInput = button-CONVERT;
+      soundList.get(plyrInput-CONVERT).play();
   }
   if (plyrPattern.size() < genPattern.size()){
-    if (Character.getNumericValue(key) > 0 && Character.getNumericValue(key) <= 9){
-      plyrInput = Character.getNumericValue(key);
-      plyrPattern.add(plyrInput);
-      soundList.get(plyrInput-1).play();
-      //println(plyrPattern);
-      client.publish("/Team2/plyrInput", str(plyrInput));
-      if (genPattern.size() == plyrPattern.size()) {
-        delay(750);
-        outcomeCheck();
-      }
+    plyrInput = button-CONVERT;
+    plyrPattern.add(plyrInput);
+    soundList.get(plyrInput-CONVERT).play();
+    //println(plyrPattern);
+    client.publish("/Team2/plyrInput", str(plyrInput));
+    if (genPattern.size() == plyrPattern.size()) {
+      delay(750);
+      outcomeCheck();
     }
   }
 }
@@ -98,21 +109,13 @@ void keyReleased(){
 void keyPressed() {
   if (key == CODED) {
     if (keyCode == UP) {
-      client.publish("/Team2/life", str(life));
-      client.publish("/Team2/score", str(score));
       intro = false;
       gameRound();
     } 
   } else if (key == 'y' || key == 'Y'){
-    if (pressable == true){
-      client.publish("/Team2/continueGame", "Y");
-      gameRound();
-    }
+    if (pressable == true){gameRound();}
   } else if (key == 'n' || key == 'N'){
-    if (pressable == true){
-      client.publish("/Team2/continueGame", "N");
-      exit();
-    }
+    if (pressable == true) {exit();}
   }
 }
 
@@ -168,23 +171,34 @@ void outcomeCheck() {
         currRound=3;
         life = 3;
       }
-  }
-  client.publish("/Team2/life", str(life));
-  client.publish("/Team2/score", str(score));
+   }
 }
-
 
 void draw() {
   //displays reading on screen
   background(0);
   
+  int prevState;
+  int currState;
+  for (int i = STARTPIN; i<(PINS+STARTPIN); i++) {
+    if (arduino.digitalRead(i) == Arduino.HIGH){
+      prevState = stateCheck.get(i-CONVERT);
+      currState = arduino.digitalRead(i);
+      if (prevState != currState){
+        buttonPress(i);
+        stateCheck.set(i-CONVERT, currState);
+      }
+    } else {
+      stateCheck.set(i-CONVERT, NOTPRESSED);
+    }
+  }
 }
 
 void clientConnected() {
   println("client connected");
   
   //receive all group members' info
-  client.subscribe("/aliceTest");
+  client.subscribe("/Team2/buttonPressed");
 }
 
 //not sure if this part works

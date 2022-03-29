@@ -4,7 +4,8 @@ import processing.sound.*;
 
 MQTTClient client;
 
-
+Serial myPort;
+String val;
 
 int random, receivedVal, plyrInput;
 int currRound=3;
@@ -25,6 +26,9 @@ ArrayList<SoundFile> alarmList = new ArrayList();
 ArrayList<Timer> ts = new ArrayList();
 
 void setup() {
+  
+  String portName = Serial.list()[2];
+  myPort = new Serial(this, portName, 9600);
   
   soundList.add(new SoundFile(this, "BARK.mp3"));
   soundList.add(new SoundFile(this, "BONK.mp3"));
@@ -144,11 +148,7 @@ void outcomeCheck() {
     currRound++; 
     continueGame();
   } else {
-      for (int i=0;i<=currRound;i++){
-        if(genPattern.get(i) != plyrPattern.get(i)){
-          if (life > 0) {life--;}
-        }
-      }
+      life--;
       println("YOU LOSE THE ROUND, CURRENT SCORE:" + score);
       println("YOU HAVE: " + life + " heart(s) left");
       if (life > 0){
@@ -168,14 +168,16 @@ void outcomeCheck() {
 void draw() {
   //displays reading on screen
   background(0);
-  
+  if (myPort.available()>0){
+    val = myPort.readStringUntil('\n');
+  }
 }
 
 void clientConnected() {
   println("client connected");
   
   //receive all group members' info
-  client.subscribe("/aliceTest");
+  client.subscribe("/Team2/buttonPressed");
 }
 
 //not sure if this part works
