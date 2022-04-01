@@ -4,9 +4,6 @@ import processing.sound.*;
 
 MQTTClient client;
 
-Serial myPort;
-String val;
-
 int random, receivedVal, plyrInput;
 int currRound=3;
 int life=3;
@@ -26,9 +23,6 @@ ArrayList<SoundFile> alarmList = new ArrayList();
 ArrayList<Timer> ts = new ArrayList();
 
 void setup() {
-  
-  String portName = Serial.list()[2];
-  myPort = new Serial(this, portName, 9600);
   
   soundList.add(new SoundFile(this, "BARK.mp3"));
   soundList.add(new SoundFile(this, "BONK.mp3"));
@@ -168,9 +162,6 @@ void outcomeCheck() {
 void draw() {
   //displays reading on screen
   background(0);
-  if (myPort.available()>0){
-    val = myPort.readStringUntil('\n');
-  }
 }
 
 void clientConnected() {
